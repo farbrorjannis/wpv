@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PaperMetric – Smart Studio Tool</title>
+    <script src="https://tailwindcss.com"></script>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        body { 
+            background-color: #FDFCF8; 
+            color: #2D2D2D; 
+            font-family: 'Inter', sans-serif; 
+        }
+        .serif { font-family: 'Instrument Serif', serif; }
+        .paper-card { 
+            background: #ffffff; 
+            border: 1px solid #E5E2D9; 
+            transition: all 0.3s ease; 
+        }
+        .paper-card:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.02); 
+        }
+        .accent-green { color: #4A5D4E; }
+        .bg-accent-green { background-color: #4A5D4E; }
+    </style>
+</head>
+<body class="p-6 md:p-12">
+
+    <!-- Header -->
+    <header class="max-w-6xl mx-auto mb-12 flex justify-between items-end">
+        <div>
+            <h1 class="text-5xl serif mb-2 accent-green">PaperMetric</h1>
+            <p class="text-gray-500 font-light italic">Ett intelligent verktyg för den arbetande konstnären.</p>
+        </div>
+        <div class="text-right hidden md:block">
+            <span class="text-xs uppercase tracking-widest text-gray-400">Normaliserad yta: A4 (210x297mm)</span>
+        </div>
+    </header>
+
+    <!-- Filters -->
+    <section class="max-w-6xl mx-auto mb-8 flex flex-wrap gap-4">
+        <select id="materialFilter" class="bg-transparent border-b border-gray-300 py-2 px-4 focus:outline-none focus:border-green-800">
+            <option value="all">Alla Material</option>
+            <option value="cotton">100% Bomull</option>
+            <option value="cellulose">Cellulosa</option>
+        </select>
+        <select id="regionFilter" class="bg-transparent border-b border-gray-300 py-2 px-4 focus:outline-none focus:border-green-800">
+            <option value="all">Globala Butiker</option>
+            <option value="SE">Sverige</option>
+            <option value="UK">UK</option>
+            <option value="US">USA</option>
+        </select>
+    </section>
+
+    <!-- Results Grid -->
+    <main id="paperGrid" class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Genereras dynamiskt -->
+    </main>
+
+    <script>
+        // DATA ARCHITECTURE
+        const products = [
+            { id: "arches-cp-300", brand: "Arches", name: "Cold Pressed", material: "cotton", quality: 100, surface: "CP" },
+            { id: "fabriano-t5", brand: "Fabriano", name: "Artistico T5", material: "cotton", quality: 95, surface: "Grain Fin" },
+            { id: "canson-xl", brand: "Canson", name: "XL Aquarelle", material: "cellulose", quality: 40, surface: "Cold Press" },
+            { id: "saunders-waterford", brand: "Saunders", name: "Waterford", material: "cotton", quality: 98, surface: "Rough" }
+        ];
+
+        const stores = [
+            { id: "konst-sthlm", name: "Konstnärernas Centralköp", city: "Stockholm", country: "SE", currency: "SEK" },
+            { id: "jacksons-uk", name: "Jackson's Art", city: "London", country: "UK", currency: "GBP" },
+            { id: "cheap-joes", name: "Cheap Joe's", city: "New York", country: "US", currency: "USD" }
+        ];
+
+        const offers = [
+            { productId: "arches-cp-300", storeId: "konst-sthlm", price: 1250, type: "block", width: 260, height: 360, count: 20, efficiency: 0.95 },
+            { productId: "arches-cp-300", storeId: "jacksons-uk", price: 75, type: "roll", width: 1130, height: 9100, count: 1, efficiency: 0.85 },
+            { productId: "canson-xl", storeId: "konst-sthlm", price: 180, type: "pad", width: 210, height: 297, count: 30, efficiency: 1.0 },
+            { productId: "fabriano-t5", storeId: "jacksons-uk", price: 4.5, type: "sheet", width: 560, height: 760, count: 1, efficiency: 0.90 }
+        ];
+
+        // ENGINE LOGIC
+        const A4_AREA = 210 * 297; // mm2
+
+        function calculateMetrics(offer) {
+            const totalArea = offer.width * offer.height * offer.count;
+            const usableArea = totalArea * offer.efficiency;
+            const a4Equivalents = usableArea / A4_AREA;
+            const costPerA4 = offer.price / a4Equivalents;
+            
+            return { a4Equivalents: a4Equivalents.toFixed(1), costPerA4 };
+        }
+
+        function calculateSmartScore(offer, product) {
+            const { costPerA4 } = calculateMetrics(offer);
+            // Normalisera pris: lägre är bättre (max 40 poäng)
+            const priceScore = Math.max(0, 40 - (costPerA4 / 2)); 
+            // Kvalitet: (max 30 poäng)
+            const qualityScore = (product.quality / 100) * 30;
+            // Format efficiency: (max 20 poäng)
+            const formatScore = offer.efficiency * 20;
+
+            return (priceScore + qualityScore + formatScore).toFixed(1);
+        }
+
+        function render() {
+            const grid = document.getElementById('paperGrid');
+            grid.innerHTML = '';
+
+            const sortedOffers = offers.map(o => {
+                const product = products.find(p => p.id === o.productId);
+                const store = stores.find(s => s.id === o.storeId);
+                const metrics = calculateMetrics(o);
+                const score = calculateSmartScore(o, product);
+                return { ...o, product, store, metrics, score };
+            }).sort((a, b) => b.score - a.score);
+
+            sortedOffers.forEach((item, index) => {
+                const isBestDeal = item.metrics.costPerA4 === Math.min(...sortedOffers.map(x => x.metrics.costPerA4));
+                const isSmartChoice = index === 0;
+
+                grid.innerHTML += `
+                    <div class="paper-card p-6 rounded-xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="text-xs font-semibold tracking-widest text-gray-400 uppercase">${item.product.brand}</span>
+                                <div class="flex gap-2">
+                                    ${isSmartChoice ? '<span class="bg-green-100 text-green-800 text-[10px] px-2 py-1 rounded-full">⭐ SMART CHOICE</span>' : ''}
+                                    ${isBestDeal ? '<span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-1 rounded-full">🥇 BEST DEAL</span>' : ''}
+                                </div>
+                            </div>
+                            <h3 class="text-xl serif accent-green mb-1">${item.product.name}</h3>
+                            <p class="text-sm text-gray-500 mb-4">${item.type.toUpperCase()} • ${item.product.material === 'cotton' ? '100% Bomull' : 'Cellulosa'}</p>
+                            
+                            <div class="space-y-2 mb-6">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-400">Pris per A4</span>
+                                    <span class="font-semibold">${item.metrics.costPerA4.toFixed(2)} ${item.store.currency}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-400">Total yta</span>
+                                    <span>${item.metrics.a4Equivalents} st A4</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-gray-100 flex justify-between items-center">
+                            <span class="text-xs text-gray-400">${item.store.name}, ${item.store.city}</span>
+                            <span class="text-lg font-light">${item.price} ${item.store.currency}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        render();
+    </script>
+</body>
+</html>
