@@ -1,46 +1,159 @@
-<!-- Uppdaterad sektion för sökresultat med centrerad layout och köp-länk -->
-<style>
-    .results-container {
-        max-width: 600px; /* Smalare för bättre fokus */
-        margin: 0 auto;
-    }
-    .shop-link {
-        background-color: transparent;
-        border: 1px solid var(--clay-brown);
-        color: var(--clay-brown);
-        padding: 6px 16px;
-        border-radius: 12px;
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        transition: all 0.2s;
-    }
-    .shop-link:hover {
-        background-color: var(--clay-brown);
-        color: white;
-    }
-</style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>akvarellskiss.se – Paper Search Engine</title>
+    <script src="https://tailwindcss.com"></script>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        :root {
+            --paper-bg: #FDFCF8;
+            --clay-brown: #5D4B40;
+            --soft-border: #E8E3D9;
+            --accent-tan: #D9D2C5;
+        }
+        body { 
+            background-color: var(--paper-bg); 
+            color: var(--clay-brown); 
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .serif { font-family: 'Instrument Serif', serif; }
+        
+        /* Centered Container */
+        .app-container {
+            max-width: 550px;
+            margin: 0 auto;
+            padding: 4rem 1.5rem;
+        }
 
-<div class="results-container">
-    <div id="resultsGrid" class="space-y-6">
-        <!-- Exempel på ett resultatkort -->
-        <div class="card p-8 shadow-sm hover:shadow-md border-[#E8E3D9]">
-            <div class="flex justify-between items-start mb-6">
-                <div>
-                    <span class="badge mb-2 inline-block">Best Value</span>
-                    <h3 class="text-2xl serif">IB Wahlström</h3>
-                    <p class="text-sm opacity-60">Saunders Waterford • 100% Cotton • Roll</p>
-                </div>
-                <div class="text-right">
-                    <span class="text-2xl font-light">28.50 SEK</span>
-                    <p class="text-[10px] uppercase opacity-40">Per A4 equivalent</p>
-                </div>
+        /* UI Elements */
+        .input-group {
+            background: white;
+            border: 1px solid var(--soft-border);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        select, input[type="radio"] {
+            cursor: pointer;
+        }
+
+        .custom-select {
+            appearance: none;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' fill='none' viewBox='0 0 24 24' stroke='%235D4B40'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") no-repeat right 1rem center;
+            background-size: 1rem;
+            border-bottom: 1px solid var(--soft-border);
+            padding: 0.5rem 0;
+            width: 100%;
+            outline: none;
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--soft-border);
+            border-radius: 24px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            border-color: var(--clay-brown);
+            transform: translateY(-2px);
+        }
+
+        .badge {
+            border: 1px solid var(--clay-brown);
+            border-radius: 20px;
+            padding: 2px 12px;
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .shop-btn {
+            display: inline-block;
+            border: 1px solid var(--clay-brown);
+            padding: 8px 20px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+        .shop-btn:hover {
+            background: var(--clay-brown);
+            color: white;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade { animation: fadeIn 0.4s ease-out forwards; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Branding -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl serif italic mb-2 tracking-tight">akvarellskiss.se</h1>
+            <p class="text-xs uppercase tracking-[0.2em] opacity-50">Professional Studio Engine</p>
+        </header>
+
+        <!-- Search Controls -->
+        <div class="input-group shadow-sm">
+            <div class="mb-8">
+                <label class="text-[10px] uppercase tracking-widest opacity-40 block mb-2">Select Brand</label>
+                <select id="brandSelect" onchange="searchPaper()" class="custom-select bg-transparent">
+                    <option value="Arches">Arches</option>
+                    <option value="Saunders Waterford">Saunders Waterford</option>
+                    <option value="Fabriano">Fabriano Artistico</option>
+                    <option value="Canson">Canson</option>
+                    <option value="Hahnemühle">Hahnemühle</option>
+                </select>
             </div>
-            
-            <div class="flex justify-between items-center pt-4 border-t border-dashed border-[#D9D2C5]">
-                <span class="text-sm italic">Total: 1,850 SEK</span>
-                <a href="https://ibwahlstrom.se" target="_blank" class="shop-link">Shop Now</a>
+
+            <div>
+                <label class="text-[10px] uppercase tracking-widest opacity-40 block mb-4">Material Grade</label>
+                <div class="flex gap-8">
+                    <label class="flex items-center gap-3 cursor-pointer text-sm">
+                        <input type="radio" name="material" value="cotton" checked onchange="searchPaper()" class="w-4 h-4 accent-[#5D4B40]"> 
+                        100% Cotton
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer text-sm">
+                        <input type="radio" name="material" value="cellulose" onchange="searchPaper()" class="w-4 h-4 accent-[#5D4B40]"> 
+                        Cellulose
+                    </label>
+                </div>
             </div>
         </div>
+
+        <!-- Results Section -->
+        <div id="resultsWrapper">
+            <div id="resultsHeader" class="hidden flex justify-between items-end mb-6 px-2">
+                <h2 class="serif text-xl italic">Top 5 Deals</h2>
+                <span class="text-[10px] opacity-40 uppercase tracking-tighter">Sorted by cost per A4 area</span>
+            </div>
+            
+            <div id="resultsGrid" class="space-y-4">
+                <!-- Results from paper.js will be injected here -->
+            </div>
+        </div>
+
+        <footer class="mt-20 text-center border-t border-[#E8E3D9] pt-8">
+            <p class="text-[10px] opacity-30 uppercase tracking-widest">© akvarellskiss.se — For the working artist</p>
+        </footer>
     </div>
-</div>
+
+    <!-- Link your JS file -->
+    <script src="paper.js"></script>
+</body>
+</html>
