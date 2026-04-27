@@ -1,20 +1,29 @@
-// Configuration
+// Configuration: Normalization based on a standard A4 sheet
 const A4_AREA = 210 * 297; // mm2
 
 async function searchPaper() {
-    const brand = document.getElementById('brandSelect').value;
-    const material = document.querySelector('input[name="material"]:checked').value;
+    const brandSelect = document.getElementById('brandSelect');
+    if (!brandSelect) return;
+    
+    const brand = brandSelect.value;
     const grid = document.getElementById('resultsGrid');
-    const header = document.getElementById('resultsHeader');
+    
+    // Show loading state
+    grid.innerHTML = `<p class="text-center opacity-30 italic py-10">Analyzing store prices for ${brand}...</p>`;
 
     try {
-        // 1. Fetch data from your JSON file
-        const response = await fetch('papers.json');
+        // Fetch data with a cache-buster to ensure we get the latest prices
+        const response = await fetch('papers.json?v=' + new Date().getTime());
         const allPapers = await response.json();
 
-        // 2. Filter and Calculate
+        // 1. Filter and Calculate (Smart Matching)
         let results = allPapers
-            .filter(p => p.brand === brand && p.material === material)
+            .filter(p => {
+                const brandInput = brand.toLowerCase();
+                const paperBrand = p.brand.toLowerCase();
+                // Matches if "Canson Heritage" contains "Canson" or vice versa
+                return brandInput.includes(paperBrand) || paperBrand.includes(brandInput);
+            })
             .map(p => {
                 const totalArea = p.width * p.height * p.count;
                 const a4Equivalents = totalArea / A4_AREA;
@@ -22,49 +31,45 @@ async function searchPaper() {
                 return { ...p, pricePerA4 };
             });
 
-        // 3. Sort by price (lowest first) and take Top 5
+        // 2. Sort by price (lowest per A4 first) and take Top 5
         results.sort((a, b) => a.pricePerA4 - b.pricePerA4);
         const top5 = results.slice(0, 5);
 
-        // 4. Render to UI
-        header.classList.remove('hidden');
+        // 3. Render to UI
         grid.innerHTML = "";
 
         if (top5.length === 0) {
-            grid.innerHTML = `<p class="text-center italic opacity-50 mt-12">No matches found for this selection.</p>`;
+            grid.innerHTML = `<p class="text-center italic opacity-40 py-12 text-sm">No specific deals found for ${brand} right now.</p>`;
             return;
         }
 
-        top5.forEach((item, index) => {
-            const isBest = index === 0;
+        top5.forEach((item) => {
+            // Determine icon based on format name
+            let icon = "📄"; // Default: Sheet
+            const name = item.name.toLowerCase();
+            if (name.includes("roll")) icon = "📜";
+            else if (name.includes("block") || name.includes("pad") || name.includes("spiral")) icon = "📒";
+
             grid.innerHTML += `
-                <div class="card p-8 shadow-sm border-[#E8E3D9] animate-fade-in">
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            ${isBest ? `<span class="badge mb-3 inline-block">Best Value</span>` : ''}
-                            <h3 class="text-2xl serif">${item.store}</h3>
-                            <p class="text-sm opacity-60">${item.brand} ${item.name}</p>
-                            <p class="text-[10px] uppercase tracking-widest mt-1">${item.width}x${item.height}mm • ${item.count}pcs</p>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-2xl font-light">${item.pricePerA4.toFixed(2)} SEK</div>
-                            <div class="text-[10px] uppercase opacity-40">Price per A4</div>
-                        </div>
+                <a href="${item.url}" target="_blank" class="result-item animate-in" style="display: flex; background: white; border-radius: 20px; padding: 20px; margin-bottom: 12px; text-decoration: none; color: inherit; box-shadow: 0 4px 15px rgba(0,0,0,0.03); align-items: center; border: 1px solid transparent; transition: all 0.2s;">
+                    <div style="width: 50px; height: 50px; background: #F9F7F4; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 20px; font-size: 1.2rem;">${icon}</div>
+                    <div style="flex: 1;">
+                        <h3 style="font-weight: 600; font-size: 13px; margin: 0; text-transform: uppercase; letter-spacing: 0.02em;">${item.store}</h3>
+                        <p style="font-size: 13px; opacity: 0.5; margin: 0; font-style: italic;">${item.brand} ${item.name}</p>
                     </div>
-                    
-                    <div class="flex justify-between items-center pt-4 border-t border-dashed border-[#D9D2C5]">
-                        <span class="text-sm italic text-gray-400">Total: ${item.price} SEK</span>
-                        <a href="${item.url}" target="_blank" class="shop-link">Shop at ${item.store}</a>
+                    <div style="text-right; margin-left: 20px;">
+                        <div style="background: #F3EFE9; padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; white-space: nowrap;">${item.pricePerA4.toFixed(2)} SEK</div>
+                        <p style="font-size: 9px; opacity: 0.3; margin-top: 4px; text-transform: uppercase; font-weight: bold; text-align: right;">Total: ${item.price} SEK</p>
                     </div>
-                </div>
+                </a>
             `;
         });
 
     } catch (error) {
         console.error("Error loading paper data:", error);
-        grid.innerHTML = `<p class="text-center text-red-800">Error loading data. Make sure papers.json is in the correct folder.</p>`;
+        grid.innerHTML = `<p class="text-center opacity-50 py-10 italic">Connection error. Please ensure papers.json is in the same folder.</p>`;
     }
 }
 
-// Initial search on load
-window.onload = searchPaper;
+// Start the engine when the page is ready
+document.addEventListener('DOMContentLoaded', searchPaper);
