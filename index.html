@@ -1,113 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <script src="https://tailwindcss.com"></script>
-    <style>
-        :root {
-            --paper-bg: #F9F7F2;
-            --clay-brown: #5D4B40;
-            --soft-border: #E8E3D9;
-            --accent-tan: #D9D2C5;
-        }
-        body { background-color: var(--paper-bg); color: var(--clay-brown); font-family: 'Georgia', serif; }
-        .input-field { border: 1.5px solid var(--soft-border); border-radius: 12px; padding: 10px; background: white; }
-        .btn-primary { background-color: var(--clay-brown); color: white; border-radius: 20px; padding: 8px 24px; transition: opacity 0.2s; }
-        .btn-primary:hover { opacity: 0.9; }
-        .card { background: white; border: 1px solid var(--soft-border); border-radius: 16px; transition: transform 0.2s; }
-        .badge { border: 1px solid var(--clay-brown); border-radius: 15px; padding: 2px 10px; font-size: 0.75rem; text-transform: uppercase; }
-    </style>
-</head>
-<body class="p-8">
+<!-- Uppdaterad sektion för sökresultat med centrerad layout och köp-länk -->
+<style>
+    .results-container {
+        max-width: 600px; /* Smalare för bättre fokus */
+        margin: 0 auto;
+    }
+    .shop-link {
+        background-color: transparent;
+        border: 1px solid var(--clay-brown);
+        color: var(--clay-brown);
+        padding: 6px 16px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.2s;
+    }
+    .shop-link:hover {
+        background-color: var(--clay-brown);
+        color: white;
+    }
+</style>
 
-    <header class="max-w-4xl mx-auto text-center mb-12">
-        <h1 class="text-3xl tracking-tight mb-2">akvarellskiss.se</h1>
-        <p class="text-sm italic opacity-70">Finding the professional's best value in watercolor paper.</p>
-    </header>
-
-    <section class="max-w-4xl mx-auto mb-12 space-y-6 bg-white p-8 rounded-2xl shadow-sm border border-[#E8E3D9]">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <!-- Brand Selection -->
-            <div>
-                <label class="block text-xs uppercase tracking-widest mb-2 opacity-60">Brand</label>
-                <select id="brandSelect" class="w-full input-field outline-none">
-                    <option value="Arches">Arches</option>
-                    <option value="Saunders Waterford">Saunders Waterford</option>
-                    <option value="Fabriano">Fabriano Artistico</option>
-                    <option value="Canson">Canson Heritage</option>
-                </select>
-            </div>
-
-            <!-- Material Selection -->
-            <div>
-                <label class="block text-xs uppercase tracking-widest mb-2 opacity-60">Material Quality</label>
-                <div class="flex gap-4 mt-2">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="material" value="cotton" checked class="accent-[#5D4B40]"> 100% Cotton
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="material" value="cellulose" class="accent-[#5D4B40]"> Cellulose
-                    </label>
+<div class="results-container">
+    <div id="resultsGrid" class="space-y-6">
+        <!-- Exempel på ett resultatkort -->
+        <div class="card p-8 shadow-sm hover:shadow-md border-[#E8E3D9]">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <span class="badge mb-2 inline-block">Best Value</span>
+                    <h3 class="text-2xl serif">IB Wahlström</h3>
+                    <p class="text-sm opacity-60">Saunders Waterford • 100% Cotton • Roll</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-2xl font-light">28.50 SEK</span>
+                    <p class="text-[10px] uppercase opacity-40">Per A4 equivalent</p>
                 </div>
             </div>
-        </div>
-
-        <div class="text-center pt-4">
-            <button onclick="searchPaper()" class="btn-primary uppercase tracking-widest text-xs font-bold">Search Best Prices</button>
-        </div>
-    </section>
-
-    <!-- Top 5 Results -->
-    <main class="max-w-4xl mx-auto">
-        <div id="resultsHeader" class="hidden mb-6 flex justify-between items-end">
-            <h2 class="text-xl italic">Top 5 Deals Found</h2>
-            <span class="text-xs opacity-50">Normalized to price per A4 sheet</span>
-        </div>
-        <div id="resultsGrid" class="grid gap-4">
-            <!-- Dynamic results here -->
-        </div>
-    </main>
-
-    <script>
-        // Store Data including your Stockholm favorites
-        const localStores = ["Jordi", "Kreatima", "IB Wahlström", "Panduro", "Slöjd-Detaljer"];
-
-        function searchPaper() {
-            const brand = document.getElementById('brandSelect').value;
-            const material = document.querySelector('input[name="material"]:checked').value;
-            const grid = document.getElementById('resultsGrid');
-            document.getElementById('resultsHeader').classList.remove('hidden');
             
-            grid.innerHTML = "";
-
-            // Mock Data Logic for "Top 5"
-            // In a real scenario, this matches your JSON database
-            const mockResults = [
-                { store: "IB Wahlström", format: "Roll (10m)", price: 1850, perA4: 28.50, badge: "Best Value" },
-                { store: "Jordi", format: "Full Sheets (10-pack)", price: 620, perA4: 31.00, badge: "Studio Choice" },
-                { store: "Kreatima", format: "Glued Block (20 sheets)", price: 450, perA4: 42.00, badge: "" },
-                { store: "Slöjd-Detaljer", format: "Spiral Pad", price: 380, perA4: 45.50, badge: "" },
-                { store: "Panduro", format: "Small Block", price: 299, perA4: 49.00, badge: "" }
-            ];
-
-            mockResults.forEach(res => {
-                grid.innerHTML += `
-                    <div class="card p-6 flex justify-between items-center hover:border-[#5D4B40]">
-                        <div>
-                            <div class="flex items-center gap-3 mb-1">
-                                <h3 class="font-bold">${res.store}</h3>
-                                ${res.badge ? `<span class="badge text-[9px]">${res.badge}</span>` : ''}
-                            </div>
-                            <p class="text-sm opacity-60">${brand} ${material === 'cotton' ? 'Cotton' : 'Cellulose'} — ${res.format}</p>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-lg font-bold">${res.perA4.toFixed(2)} SEK <span class="text-[10px] font-normal opacity-50">/ A4</span></div>
-                            <div class="text-xs opacity-40">Total: ${res.price} SEK</div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-    </script>
-</body>
-</html>
+            <div class="flex justify-between items-center pt-4 border-t border-dashed border-[#D9D2C5]">
+                <span class="text-sm italic">Total: 1,850 SEK</span>
+                <a href="https://ibwahlstrom.se" target="_blank" class="shop-link">Shop Now</a>
+            </div>
+        </div>
+    </div>
+</div>
